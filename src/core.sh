@@ -266,14 +266,13 @@ is_port_used() {
     msg "请执行: $(_yellow "${cmd} update -y; ${cmd} install net-tools -y") 来修复此问题."
 }
 
-# --- [修复核心] 增加全局 0 键返回支持 ---
 ask() {
     case $1 in
     set_ss_method)
         is_tmp_list=(${ss_method_list[@]})
         is_default_arg=$is_random_ss_method
         is_opt_msg="\n请选择加密方式:"
-        is_opt_input_msg="➡️ 请选择 \e[92m(输入 0 返回，默认 $is_default_arg)\e[0m: "
+        is_opt_input_msg="➡️ 请选择 \e[92m(输入 0 返回主面板，默认 $is_default_arg)\e[0m: "
         is_ask_set=ss_method
         ;;
     set_protocol)
@@ -309,7 +308,6 @@ ask() {
         ;;
     string)
         is_ask_set=$2
-        # 去掉原提示末尾的冒号，拼接返回提示语
         is_opt_input_msg="${3/:/} \e[92m(输入 0 返回主面板)\e[0m: "
         ;;
     list)
@@ -347,9 +345,6 @@ ask() {
         echo -ne "$is_opt_input_msg"
         read REPLY
 
-        # ==========================================
-        # 全局逃生通道：任何输入 0 的地方直接返回主菜单
-        # ==========================================
         if [[ "$REPLY" == "0" ]]; then
             echo -e "\n\e[33m已安全取消当前操作，正在返回主面板...\e[0m"
             sleep 0.5
@@ -659,7 +654,7 @@ change() {
             is_new_port=$tmp_port
         fi
         if [[ ! $is_new_port ]]; then
-            ask string is_new_port "请输入新端口:"
+            ask string is_new_port "请输入新端口"
         fi
         if [[ $is_caddy && $host ]]; then
             net=$is_old_net
@@ -678,7 +673,7 @@ change() {
             err "($is_config_file) 不支持更改域名."
         fi
         if [[ ! $is_new_host ]]; then
-            ask string is_new_host "请输入新域名:"
+            ask string is_new_host "请输入新域名"
         fi
         old_host=$host
         add $net $is_new_host
@@ -693,7 +688,7 @@ change() {
             is_new_path=/$tmp_uuid
         fi
         if [[ ! $is_new_path ]]; then
-            ask string is_new_path "请输入新路径:"
+            ask string is_new_path "请输入新路径"
         fi
         add $net auto auto $is_new_path
         ;;
@@ -711,7 +706,7 @@ change() {
             err "($is_config_file) 不支持更改密码."
         fi
         if [[ ! $is_new_pass ]]; then
-            ask string is_new_pass "请输入新密码:"
+            ask string is_new_pass "请输入新密码"
         fi
         password=$is_new_pass
         ss_password=$is_new_pass
@@ -728,7 +723,7 @@ change() {
             is_new_uuid=$tmp_uuid
         fi
         if [[ ! $is_new_uuid ]]; then
-            ask string is_new_uuid "请输入新 UUID:"
+            ask string is_new_uuid "请输入新 UUID"
         fi
         add $net auto $is_new_uuid
         ;;
@@ -752,7 +747,7 @@ change() {
             err "($is_config_file) 不支持更改目标地址."
         fi
         if [[ ! $is_new_door_addr ]]; then
-            ask string is_new_door_addr "请输入新的目标地址:"
+            ask string is_new_door_addr "请输入新的目标地址"
         fi
         door_addr=$is_new_door_addr
         add $net
@@ -763,7 +758,7 @@ change() {
             err "($is_config_file) 不支持更改目标端口."
         fi
         if [[ ! $is_new_door_port ]]; then
-            ask string door_port "请输入新的目标端口:"
+            ask string door_port "请输入新的目标端口"
             is_new_door_port=$door_port
         fi
         add $net auto auto $is_new_door_port
@@ -782,10 +777,10 @@ change() {
                 err "无法找到 Public key."
             fi
             if [[ ! $is_new_private_key ]]; then
-                ask string is_new_private_key "请输入新 Private key:"
+                ask string is_new_private_key "请输入新 Private key"
             fi
             if [[ ! $is_new_public_key ]]; then
-                ask string is_new_public_key "请输入新 Public key:"
+                ask string is_new_public_key "请输入新 Public key"
             fi
             if [[ $is_new_private_key == $is_new_public_key ]]; then
                 err "Private key 和 Public key 不能一样."
@@ -823,7 +818,7 @@ change() {
             is_new_servername=$is_random_servername
         fi
         if [[ ! $is_new_servername ]]; then
-            ask string is_new_servername "请输入新的 serverName:"
+            ask string is_new_servername "请输入新的 serverName"
         fi
         is_servername=$is_new_servername
         add $net
@@ -837,7 +832,7 @@ change() {
             err "无法配置伪装网站."
         fi
         if [[ ! $is_new_proxy_site ]]; then
-            ask string is_new_proxy_site "请输入新的伪装网站 (例如 example.com):"
+            ask string is_new_proxy_site "请输入新的伪装网站 (例如 example.com)"
         fi
         proxy_site=$(sed 's#^.*//##;s#/$##' <<<$is_new_proxy_site)
         load caddy.sh
@@ -849,7 +844,7 @@ change() {
         if [[ ! $is_socks_user ]]; then
             err "($is_config_file) 不支持更改用户名 (Username)."
         fi
-        ask string is_socks_user "请输入新用户名 (Username):"
+        ask string is_socks_user "请输入新用户名 (Username)"
         add $net
         ;;
     esac
@@ -870,13 +865,13 @@ del() {
         fi
         rm -rf $is_conf_dir/"$is_config_file"
         
+        # [极隐蔽Bug修复] 直接读取提取好的 $port，而不是用正则从名字里乱切数字
         if [[ $is_config_file =~ "CFtunnel" ]]; then
-            local del_port=$(echo $is_config_file | grep -oE "[0-9]+")
-            if [[ $del_port ]]; then
-                systemctl disable --now cftunnel-${del_port}.service &>/dev/null
-                rm -f /lib/systemd/system/cftunnel-${del_port}.service
+            if [[ $port ]]; then
+                systemctl disable --now cftunnel-${port}.service &>/dev/null
+                rm -f /lib/systemd/system/cftunnel-${port}.service
                 systemctl daemon-reload
-                msg "✅ 已清理对应的 CFtunnel 穿透守护服务."
+                msg "✅ 已清理对应的 CFtunnel 穿透守护服务 (端口: $port)."
             fi
         fi
         
@@ -1422,7 +1417,8 @@ show_all_nodes() {
         ((config_count++))
         unset is_protocol port uuid password net is_url custom_remark is_json_str
         get info $v > /dev/null 2>&1
-        info $v > /dev/null 2>&1
+        # [修复项] 移除 > /dev/null 2>&1，让终端正常打印精简的节点信息
+        info $v 
     done
     
     if [[ $config_count -eq 0 ]]; then
@@ -1746,7 +1742,7 @@ add() {
             is_install_caddy=1
         fi
         if [[ ! $host ]]; then
-            ask string host "请输入域名:"
+            ask string host "请输入域名"
         fi
         get host-test
     else
@@ -1763,20 +1759,20 @@ add() {
             
             if [[ $is_new_protocol == 'CFtunnel' ]]; then
                 if [[ ! $cf_token ]]; then
-                    ask string cf_token "请输入 Cloudflare Tunnel Token:"
+                    ask string cf_token "请输入 Cloudflare Tunnel Token"
                 fi
                 if [[ ! $cf_domain ]]; then
-                    ask string cf_domain "请输入你准备为该节点绑定的 Cloudflare 域名 (例如 node1.example.com):"
+                    ask string cf_domain "请输入你准备为该节点绑定的 Cloudflare 域名 (例如 node1.example.com)"
                 fi
             fi
 
             case ${is_new_protocol,,} in
             socks)
                 if [[ ! $is_socks_user ]]; then
-                    ask string is_socks_user "请设置用户名:"
+                    ask string is_socks_user "请设置用户名"
                 fi
                 if [[ ! $is_socks_pass ]]; then
-                    ask string is_socks_pass "请设置密码:"
+                    ask string is_socks_pass "请设置密码"
                 fi
                 ;;
             shadowsocks)
@@ -1784,7 +1780,7 @@ add() {
                     ask set_ss_method
                 fi
                 if [[ ! $ss_password ]]; then
-                    ask string ss_password "请设置密码:"
+                    ask string ss_password "请设置密码"
                 fi
                 ;;
             esac
@@ -1794,10 +1790,10 @@ add() {
 
     if [[ $is_new_protocol == 'Direct' ]]; then
         if [[ ! $door_addr ]]; then
-            ask string door_addr "请输入目标地址:"
+            ask string door_addr "请输入目标地址"
         fi
         if [[ ! $door_port ]]; then
-            ask string door_port "请输入目标端口:"
+            ask string door_port "请输入目标端口"
         fi
     fi
 
