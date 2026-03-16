@@ -1797,13 +1797,17 @@ add() {
         fi
     fi
 
-    echo ""
-    echo -e "--------------------------------------------------------"
-    read -p "请输入该节点的自定义备注 (如留空按回车，则默认使用 luopojunzi): " custom_remark
-    if [[ -z "$custom_remark" ]]; then
+    if [[ $is_main_start ]]; then
+        echo ""
+        echo -e "--------------------------------------------------------"
+        read -p "请输入该节点的自定义备注 (如留空按回车，则默认使用 luopojunzi): " custom_remark
+        if [[ -z "$custom_remark" ]]; then
+            custom_remark="luopojunzi"
+        fi
+        echo -e "--------------------------------------------------------"
+    else
         custom_remark="luopojunzi"
     fi
-    echo -e "--------------------------------------------------------"
 
     if [[ $is_install_caddy ]]; then
         get install-caddy
