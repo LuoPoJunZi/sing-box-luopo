@@ -1,7 +1,5 @@
 #!/bin/bash
 
-is_sh_ver="v1.2"
-
 protocol_list=(
     TUIC
     Trojan
@@ -113,12 +111,12 @@ get_ip() {
     if [[ $ip || $is_no_auto_tls || $is_gen || $is_dont_get_ip ]]; then
         return
     fi
-    export "$(_wget -4 -qO- https://one.one.one.one/cdn-cgi/trace | grep ip=)" &>/dev/null
+    ip=$(curl -s4m8 https://icanhazip.com || wget -qO- -t1 -T8 https://icanhazip.com)
     if [[ ! $ip ]]; then
-        export "$(_wget -6 -qO- https://one.one.one.one/cdn-cgi/trace | grep ip=)" &>/dev/null
+        ip=$(curl -s6m8 https://icanhazip.com || wget -qO- -t1 -T8 https://icanhazip.com)
     fi
     if [[ ! $ip ]]; then
-        err "获取服务器 IP 失败.."
+        err "获取服务器 IP 失败，请检查网络.."
     fi
 }
 
@@ -266,13 +264,14 @@ is_port_used() {
     msg "请执行: $(_yellow "${cmd} update -y; ${cmd} install net-tools -y") 来修复此问题."
 }
 
+# --- [修复核心] 增加全局 0 键返回支持 ---
 ask() {
     case $1 in
     set_ss_method)
         is_tmp_list=(${ss_method_list[@]})
         is_default_arg=$is_random_ss_method
-        is_opt_msg="\n请选择加密方式:\n"
-        is_opt_input_msg="(默认\e[92m $is_default_arg\e[0m):"
+        is_opt_msg="\n请选择加密方式:"
+        is_opt_input_msg="➡️ 请选择 \e[92m(输入 0 返回，默认 $is_default_arg)\e[0m: "
         is_ask_set=ss_method
         ;;
     set_protocol)
@@ -290,23 +289,26 @@ ask() {
         echo -e "  \e[92m(18)\e[0m VLESS-REALITY     \e[92m(19)\e[0m VLESS-HTTP2-REALITY"
         echo -e "  \e[92m(20)\e[0m AnyTLS\n"
         echo -e "  \e[93m[ 隧道穿透 ]\e[0m"
-        echo -e "  \e[92m(21)\e[0m CFtunnel          \e[92m(22)\e[0m Socks"
+        echo -e "  \e[92m(21)\e[0m CFtunnel          \e[92m(22)\e[0m Socks\n"
+        echo -e "  \e[93m[ 取消操作 ]\e[0m"
+        echo -e "  \e[92m(0)\e[0m 返回主面板"
         echo -e "\e[90m-----------------------------------------------------\e[0m"
         is_ask_set=is_new_protocol
-        is_opt_input_msg="➡️ 请选择协议序号 [\e[91m1-22\e[0m]: "
+        is_opt_input_msg="➡️ 请选择协议序号 [\e[91m0-22\e[0m]: "
         ;;
     set_change_list)
         is_tmp_list=()
         for v in ${is_can_change[@]}; do
             is_tmp_list+=("${change_list[$v]}")
         done
-        is_opt_msg="\n请选择更改:\n"
+        is_opt_msg="\n请选择更改:"
         is_ask_set=is_change_str
-        is_opt_input_msg=$3
+        is_opt_input_msg="➡️ 请输入对应的数字 \e[92m(输入 0 返回主面板)\e[0m: "
         ;;
     string)
         is_ask_set=$2
-        is_opt_input_msg=$3
+        # 去掉原提示末尾的冒号，拼接返回提示语
+        is_opt_input_msg="${3/:/} \e[92m(输入 0 返回主面板)\e[0m: "
         ;;
     list)
         is_ask_set=$2
@@ -314,12 +316,21 @@ ask() {
             is_tmp_list=($3)
         fi
         is_opt_msg=$4
+        if [[ ! $is_opt_msg ]]; then
+            is_opt_msg="\n请选择:"
+        fi
         is_opt_input_msg=$5
+        if [[ ! $is_opt_input_msg ]]; then
+            is_opt_input_msg="➡️ 请输入对应的数字 \e[92m(输入 0 返回主面板)\e[0m: "
+        else
+            is_opt_input_msg="${is_opt_input_msg/:/} \e[92m(输入 0 返回主面板)\e[0m: "
+        fi
         ;;
     get_config_file)
         is_tmp_list=("${is_all_json[@]}")
-        is_opt_msg="\n请选择配置:\n"
+        is_opt_msg="\n请选择配置:"
         is_ask_set=is_config_file
+        is_opt_input_msg="➡️ 请输入对应的数字 \e[92m(输入 0 返回主面板)\e[0m: "
         ;;
     esac
     
@@ -333,6 +344,17 @@ ask() {
     while :; do
         echo -ne "$is_opt_input_msg"
         read REPLY
+
+        # ==========================================
+        # 全局逃生通道：任何输入 0 的地方直接返回主菜单
+        # ==========================================
+        if [[ "$REPLY" == "0" ]]; then
+            echo -e "\n\e[33m已安全取消当前操作，正在返回主面板...\e[0m"
+            sleep 0.5
+            is_main_menu
+            exit 0
+        fi
+
         if [[ ! $REPLY && $is_emtpy_exit ]]; then
             exit
         fi
@@ -2001,8 +2023,7 @@ cron_task() {
     msg "1. 启用: 自动更新核心 + 自动清空日志 (推荐)"
     msg "2. 启用: 仅自动清空日志 (手动更新核心)"
     msg "3. 关闭: 停止所有自动维护任务"
-    msg "4. 退出"
-    ask list is_do_cron null "请选择 [1-4]:"
+    ask list is_do_cron null
     case $REPLY in
     1)
         (crontab -l 2>/dev/null | grep -v -E "sing-box update core|/var/log/sing-box"; echo "0 3 * * 1 /usr/local/bin/sing-box update core >/dev/null 2>&1"; echo "0 4 * * * echo > /var/log/sing-box/access.log 2>/dev/null; echo > /var/log/sing-box/error.log 2>/dev/null") | crontab -
@@ -2015,9 +2036,6 @@ cron_task() {
     3)
         crontab -l 2>/dev/null | grep -v -E "sing-box update|/var/log/sing-box" | crontab -
         _green "\n已关闭: 所有 Sing-box 相关的定时维护任务\n"
-        ;;
-    4)
-        exit
         ;;
     esac
 }
@@ -2128,7 +2146,7 @@ is_main_menu() {
             if [[ $is_caddy ]]; then
                 is_tmp_list+=("更新Caddy")
             fi
-            ask list is_do_update null "\n请选择手动更新:\n"
+            ask list is_do_update null "\n请选择手动更新:"
             update $REPLY
             ;;
         esac
