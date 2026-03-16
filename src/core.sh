@@ -1,5 +1,7 @@
 #!/bin/bash
 
+is_sh_ver="v1.2"
+
 protocol_list=(
     TUIC
     Trojan
@@ -153,8 +155,7 @@ EOF
     systemctl daemon-reload
     systemctl enable --now cftunnel-${l_port}.service &>/dev/null
     msg "✅ CFtunnel 穿透守护服务 (关联内部端口: ${l_port}) 已创建并启动."
-    msg "⚠️  $(_yellow "重要：你还需要在 Cloudflare 面板完成最后一步映射！")"
-    msg "👉 $(_cyan "图文配置教程：https://github.com/LuoPoJunZi/Sing-box-LPMG/blob/main/CFTunnels.md")"
+    msg "⚠️  $(_yellow "重要：别忘了去 Cloudflare 面板完成域名映射！")"
 }
 
 firewall_allow() {
@@ -279,7 +280,7 @@ ask() {
         echo -e "                 请选择要添加的协议"
         echo -e "\e[96m=====================================================\e[0m"
         echo -e "  \e[93m[ 基础协议 ]\e[0m"
-        echo -e "  \e[92m(1)\e[0m TUIC        \e[92m(2)\e[0m Trojan       \e[92m(3)\e[0m Hysteria2   \e[92m(4)\e[0m VMess-WS"
+        echo -e "  \e[92m(1)\e[0m TUIC        \e[92m(2)\e[0m Trojan      \e[92m(3)\e[0m Hysteria2   \e[92m(4)\e[0m VMess-WS"
         echo -e "  \e[92m(5)\e[0m VMess-TCP   \e[92m(6)\e[0m VMess-HTTP   \e[92m(7)\e[0m VMess-QUIC  \e[92m(8)\e[0m Shadowsocks"
         echo -e "  \e[93m[ TLS 隧道 ]\e[0m"
         echo -e "  \e[92m(9)\e[0m VMess-H2    \e[92m(10)\e[0m VMess-WS   \e[92m(11)\e[0m VLESS-H2   \e[92m(12)\e[0m VLESS-WS"
@@ -1017,7 +1018,11 @@ get() {
         cftunnel)
             is_protocol=vless
             net=ws
-            host="cftunnel.com"
+            if [[ $cf_domain ]]; then
+                host="$cf_domain"
+            else
+                host="你的CF绑定域名(需修改)"
+            fi
             if [[ ! $path ]]; then
                 path="/$uuid"
             fi
@@ -1233,10 +1238,10 @@ info() {
 
     if [[ $is_config_name =~ "CFtunnel" ]]; then
         is_color=45
-        is_can_change=(0 5)
+        is_can_change=(0 2 5)
         is_info_show=(0 1 2 3 4 6 7 8)
-        is_info_str=(vless "你的CF绑定域名(需修改)" "443" $uuid ws "你的CF绑定域名(需修改)" "/$uuid" tls)
-        is_url="vless://$uuid@你的CF绑定域名:443?encryption=none&security=tls&type=ws&host=你的CF绑定域名&path=/$uuid#$custom_remark"
+        is_info_str=(vless "$host" "443" $uuid ws "$host" "$path" tls)
+        is_url="vless://$uuid@$host:443?encryption=none&security=tls&type=ws&host=$host&path=$path#$custom_remark"
         net="cftunnel_handled"
     fi
     
@@ -1393,7 +1398,7 @@ show_all_nodes() {
         ((config_count++))
         unset is_protocol port uuid password net is_url custom_remark is_json_str
         get info $v > /dev/null 2>&1
-        info $v
+        info $v > /dev/null 2>&1
     done
     
     if [[ $config_count -eq 0 ]]; then
@@ -1405,6 +1410,73 @@ show_all_nodes() {
     is_show_all=
     is_dont_auto_exit=
     pause
+}
+
+gen_sub() {
+    clear
+    echo -e "\e[96m=====================================================\e[0m"
+    echo -e "                 生成节点订阅链接 (Sub)"
+    echo -e "\e[96m=====================================================\e[0m"
+    msg "🔍 正在扫描本机节点..."
+
+    local all_urls=""
+    local config_count=0
+
+    for v in $(ls $is_conf_dir | grep .json$ | sed '/dynamic-port-.*-link/d'); do
+        unset is_protocol port uuid password net is_url custom_remark is_json_str host path
+        is_dont_show_info=1
+        get info $v > /dev/null 2>&1
+        info $v > /dev/null 2>&1
+        if [[ $is_url ]]; then
+            ((config_count++))
+            msg "   $config_count. $is_config_name"
+            all_urls+="${is_url}\n"
+        fi
+    done
+
+    if [[ $config_count -eq 0 ]]; then
+        err "目前没有找到任何有效节点，请先添加配置后再生成订阅。"
+        return
+    fi
+
+    msg "\n⚙️ 正在进行 Base64 编码并生成订阅文件..."
+    local sub_base64=$(echo -ne "$all_urls" | base64 -w 0)
+
+    echo -e "\n------------- \e[92m方案A: 剪贴板 Base64 订阅\e[0m -------------"
+    echo -e "你可以直接复制下方整段乱码，在客户端选择【从剪贴板导入】:\n"
+    echo -e "\e[93m${sub_base64}\e[0m\n"
+    echo -e "--------------------------------------------------------"
+
+    if command -v python3 >/dev/null 2>&1; then
+        echo -e "\n------------- \e[92m方案B: 临时 Web 订阅服务\e[0m -------------"
+        mkdir -p /tmp/sb_sub
+        echo -ne "$sub_base64" > /tmp/sb_sub/sub.txt
+        
+        get_ip
+        local sub_port=9866
+        
+        # Kill existing temp server if running
+        fuser -k $sub_port/tcp >/dev/null 2>&1
+        
+        cd /tmp/sb_sub
+        python3 -m http.server $sub_port >/dev/null 2>&1 &
+        local py_pid=$!
+
+        msg "✅ 临时订阅 Web 服务已开启！"
+        msg "🔗 \e[4;44mhttp://${ip}:${sub_port}/sub.txt\e[0m\n"
+        msg "💡 请在客户端【添加订阅】上方链接，并点击【更新订阅】。"
+        
+        echo -ne "\n⚠️ 导入完成后，请按 $(_green Enter 回车键) 关闭临时服务并返回主菜单..."
+        read -rs -d $'\n'
+        kill $py_pid >/dev/null 2>&1
+        rm -rf /tmp/sb_sub
+        msg "\n✅ 临时服务已销毁，绝对安全。"
+    else
+        msg "\n⚠️ 未检测到 Python3 环境，无法开启方案B临时服务。"
+        msg "若需使用链接订阅功能，请先安装: $(_yellow "apt install python3 -y")"
+        pause
+    fi
+    is_dont_show_info=
 }
 
 add() {
@@ -1668,6 +1740,9 @@ add() {
             if [[ $is_new_protocol == 'CFtunnel' ]]; then
                 if [[ ! $cf_token ]]; then
                     ask string cf_token "请输入 Cloudflare Tunnel Token:"
+                fi
+                if [[ ! $cf_domain ]]; then
+                    ask string cf_domain "请输入你准备为该节点绑定的 Cloudflare 域名 (例如 node1.example.com):"
                 fi
             fi
 
@@ -1960,18 +2035,19 @@ is_main_menu() {
         
         echo -e "  \e[93m◈ 节点管理\e[0m"
         echo -e "    \e[92m(1)\e[0m 添加配置        \e[92m(2)\e[0m 更改配置"
-        echo -e "    \e[92m(3)\e[0m 查看单节点      \e[92m(4)\e[0m 删除配置\n"
+        echo -e "    \e[92m(3)\e[0m 查看单节点      \e[92m(4)\e[0m 删除配置"
+        echo -e "    \e[92m(5)\e[0m 节点订阅 (Sub)\n"
         
         echo -e "  \e[93m◈ 系统控制\e[0m"
-        echo -e "    \e[92m(5)\e[0m 启动/停止       \e[92m(6)\e[0m 自动更新/清理"
-        echo -e "    \e[92m(7)\e[0m 完全卸载        \e[92m(8)\e[0m 帮助文档\n"
+        echo -e "    \e[92m(6)\e[0m 启动/停止       \e[92m(7)\e[0m 自动更新/清理"
+        echo -e "    \e[92m(8)\e[0m 完全卸载        \e[92m(9)\e[0m 帮助文档\n"
         
         echo -e "  \e[93m◈ 高级工具\e[0m"
-        echo -e "    \e[92m(9)\e[0m 进阶选项       \e[92m(10)\e[0m 关于本脚本"
+        echo -e "    \e[92m(10)\e[0m 进阶选项      \e[92m(11)\e[0m 关于本脚本"
         echo -e "    \e[92m(0)\e[0m 退出面板"
         echo -e "\e[90m-----------------------------------------------------\e[0m"
         
-        echo -ne "➡️ 请输入对应的数字进行操作 [\e[91m0-10\e[0m]: "
+        echo -ne "➡️ 请输入对应的数字进行操作 [\e[91m0-11\e[0m]: "
         read REPLY
         
         if [[ ! $REPLY ]]; then
@@ -1980,10 +2056,10 @@ is_main_menu() {
         if [[ "$REPLY" == "0" ]]; then
             exit
         fi
-        if [[ "$REPLY" =~ ^([1-9]|10)$ ]]; then
+        if [[ "$REPLY" =~ ^([1-9]|10|11)$ ]]; then
             break
         fi
-        echo -e "\e[31m输入错误, 请输入 0-10 之间的数字\e[0m"
+        echo -e "\e[31m输入错误, 请输入 0-11 之间的数字\e[0m"
         sleep 1
     done
 
@@ -2001,22 +2077,25 @@ is_main_menu() {
         del
         ;;
     5)
+        gen_sub
+        ;;
+    6)
         ask list is_do_manage "启动 停止 重启"
         manage $REPLY &
         msg "\n管理状态执行: $(_green $is_do_manage)\n"
         ;;
-    6)
+    7)
         cron_task
         ;;
-    7)
+    8)
         uninstall
         ;;
-    8)
+    9)
         msg
         load help.sh
         show_help
         ;;
-    9)
+    10)
         ask list is_do_other "一键查看所有节点信息 启用BBR 查看日志 测试运行 重装脚本 设置DNS 手动更新"
         case $REPLY in
         1)
@@ -2050,7 +2129,7 @@ is_main_menu() {
             ;;
         esac
         ;;
-    10)
+    11)
         load help.sh
         about
         ;;
@@ -2131,6 +2210,9 @@ main() {
         ;;
     cron)
         cron_task
+        ;;
+    sub)
+        gen_sub
         ;;
     all)
         show_all_nodes
