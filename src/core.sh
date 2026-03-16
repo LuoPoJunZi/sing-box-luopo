@@ -1,5 +1,7 @@
 #!/bin/bash
 
+is_sh_ver="v1.2"
+
 protocol_list=(
     TUIC
     Trojan
