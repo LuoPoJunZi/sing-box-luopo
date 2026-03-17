@@ -4,7 +4,7 @@
 # ==========================================
 
 author="LuoPoJunZi"
-is_sh_ver="v1.2"
+is_sh_ver="v1.0"
 is_sh_repo="LuoPoJunZi/sing-box-luopo"
 
 # --- 1. 终端 UI 颜色定义 ---
