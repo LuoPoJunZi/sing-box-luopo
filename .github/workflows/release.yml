@@ -21,10 +21,9 @@ jobs:
       - name: Extract Version
         id: get_version
         run: |
-          # 【修复项】：放宽正则容错率，并加入 || echo "" 防止 grep 找不到时直接崩溃
+          # 放宽正则容错率，并加入 || echo "" 防止 grep 找不到时直接崩溃
           VERSION=$(grep -oP 'is_sh_ver="\K[^"]+' src/init.sh | head -n 1 || echo "")
           
-          # 增加人工错误提示，方便以后定位问题
           if [ -z "$VERSION" ]; then
             echo "❌ 致命错误：无法在 src/init.sh 中找到 is_sh_ver 变量！请检查拼写。"
             exit 1
@@ -49,7 +48,10 @@ jobs:
 
       - name: Package Code
         if: env.should_release == 'true'
-        run: tar --exclude="./.git" --exclude="./.github" --exclude="./code.tar.gz" -zcvf code.tar.gz .
+        # 将压缩包先生成在上一层目录，彻底避开“文件正在变化”的冲突，然后再移回来
+        run: |
+          tar --exclude=".git" --exclude=".github" -zcvf ../code.tar.gz .
+          mv ../code.tar.gz ./
 
       - name: Create Release
         if: env.should_release == 'true'
