@@ -120,15 +120,29 @@ sb
 如果因为错误操作导致面板无法进入，或者你想彻底清理服务器环境，请直接复制以下这段命令到终端执行，它将**无情地把脚本、核心、日志和定时任务连根拔起**，还你一个纯净的系统：
 
 ```bash
+# 1. 停止并禁用所有相关服务
 systemctl stop sing-box caddy 2>/dev/null
 systemctl disable sing-box caddy 2>/dev/null
-rm -f /lib/systemd/system/sing-box.service /lib/systemd/system/cftunnel-*.service
+
+# 2. 删除核心守护服务和穿透服务
+rm -f /lib/systemd/system/sing-box.service
+rm -f /lib/systemd/system/caddy.service
+rm -f /lib/systemd/system/cftunnel-*.service
 systemctl daemon-reload
+
+# 3. 清理自动更新和日志清理的定时任务
 crontab -l 2>/dev/null | grep -v -E "sing-box update|/var/log/sing-box" | crontab -
+
+# 4. 删除所有核心文件、配置目录和日志 (包含 Caddy)
 rm -rf /etc/sing-box /var/log/sing-box /usr/local/bin/sing-box /usr/local/bin/sb
-sed -i "/sing-box/d" /root/.bashrc; sed -i "/alias sb=/d" /root/.bashrc
+rm -rf /etc/caddy /usr/local/bin/caddy
+
+# 5. 清理环境变量中的快捷命令别名并使其生效
+sed -i "/sing-box/d" /root/.bashrc
+sed -i "/alias sb=/d" /root/.bashrc
 source /root/.bashrc
-echo -e "\n✅ 物理清理完成！系统已恢复纯净状态。"
+
+echo -e "\n✅ 物理清理完成！系统已彻底恢复纯净状态。"
 ```
 清理完毕后，重新执行一键安装命令即可满血复活 [cite: 2]。
 
