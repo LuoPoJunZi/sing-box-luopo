@@ -64,28 +64,28 @@ sb
 <summary>👉 点击展开保姆级 CFtunnel 穿透教程</summary>
 
 ### 第一阶段：在 Cloudflare 获取 Tunnel Token (首次使用必看)
-1. [cite_start]登录 Cloudflare 主页，进入 **Zero Trust** 面板（首次进入需绑定支付方式开通 Free 免费版，绝对不会扣费） [cite: 1]。
-2. [cite_start]依次点击左侧菜单的 **网络 (Networks) -> Tunnels (隧道)** [cite: 1]。
-3. [cite_start]点击 **Add a tunnel**，选择 **"Cloudflared (推荐)"**，为隧道随便起个名字并保存 [cite: 1]。
-4. [cite_start]环境选择 Debian/Ubuntu，在页面下方会生成一串包含 `sudo cloudflared...` 的安装代码 [cite: 1]。
-5. [cite_start]**提取 Token：** 仔细找到代码里那串 **以 `ey` 开头的超长乱码** 并复制，这就是极其重要的 Tunnel Token [cite: 1]。
+1. 登录 Cloudflare 主页，进入 **Zero Trust** 面板（首次进入需绑定支付方式开通 Free 免费版，绝对不会扣费） 。
+2. 依次点击左侧菜单的 **网络 (Networks) -> Tunnels (隧道)** 。
+3. 点击 **Add a tunnel**，选择 **"Cloudflared (推荐)"**，为隧道随便起个名字并保存 。
+4. 环境选择 Debian/Ubuntu，在页面下方会生成一串包含 `sudo cloudflared...` 的安装代码 。
+5. **提取 Token：** 仔细找到代码里那串 **以 `ey` 开头的超长乱码** 并复制，这就是极其重要的 Tunnel Token 。
 
 ### 第二阶段：在 VPS 上部署穿透节点
-1. [cite_start]终端输入 `sb`，选择 `1` 添加配置，协议选 `21` (CFtunnel) [cite: 1]。
-2. [cite_start]提示端口时直接回车自动分配（**请记下屏幕上提示的绿色 5 位数内部端口号，例如 61505**） [cite: 1]。
-3. [cite_start]粘贴刚才复制的 **Token** 并回车 [cite: 1]。
-4. [cite_start]**输入绑定的域名：** 填入你准备使用的 CF 托管域名（如 `node1.example.com`）并填写备注 [cite: 1]。
+1. 终端输入 `sb`，选择 `1` 添加配置，协议选 `21` (CFtunnel) 。
+2. 提示端口时直接回车自动分配（**请记下屏幕上提示的绿色 5 位数内部端口号，例如 61505**） 。
+3. 粘贴刚才复制的 **Token** 并回车 。
+4. **输入绑定的域名：** 填入你准备使用的 CF 托管域名（如 `node1.example.com`）并填写备注 。
 
 ### 第三阶段：配置公网映射 (最后一步)
-1. [cite_start]回到刚才的 Cloudflare 网页端，点击下一步进入 **路由隧道 (Route Tunnel)** 页面 [cite: 1]。
+1. 回到刚才的 Cloudflare 网页端，点击下一步进入 **路由隧道 (Route Tunnel)** 页面 。
 2. **Public Hostnames (公共主机名)** 配置：
    * 子域名：`node1`
    * 域：选择 `example.com`
-   * [cite_start]路径 (Path)：**留空，什么都别填！** [cite: 1]
+   * 路径 (Path)：**留空，什么都别填！** 
 3. **服务 (Service)** 配置：
-   * [cite_start]类型 (Type)：必须选择 **`HTTP`** [cite: 1]。
-   * [cite_start]URL：填写 **`127.0.0.1:你的端口号`**（例如 `127.0.0.1:61505`） [cite: 1]。
-4. [cite_start]点击 **Save hostname** 保存 [cite: 1]。
+   * 类型 (Type)：必须选择 **`HTTP`** 。
+   * URL：填写 **`127.0.0.1:你的端口号`**（例如 `127.0.0.1:61505`） 。
+4. 点击 **Save hostname** 保存 。
 
 大功告成！现在你可以直接使用 `sb sub` 生成订阅，把节点导入客户端直接起飞了！
 </details>
@@ -125,7 +125,7 @@ sed -i "/sing-box/d" /root/.bashrc; sed -i "/alias sb=/d" /root/.bashrc
 source /root/.bashrc
 echo -e "\n✅ 物理清理完成！系统已恢复纯净状态。"
 ```
-[cite_start]清理完毕后，重新执行一键安装命令即可满血复活 [cite: 2]。
+清理完毕后，重新执行一键安装命令即可满血复活 [cite: 2]。
 
 ### 2. 客户端连不上节点怎么办？
 * **检查安全组**：脚本会自动放行 VPS 内部防火墙，但如果你使用的是阿里云、腾讯云、AWS、甲骨文等主流云服务商，**必须登录其网页控制台，手动开放对应节点的端口号**。
