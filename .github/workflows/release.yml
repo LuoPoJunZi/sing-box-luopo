@@ -16,14 +16,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        # 【修复1】升级到 v4，消除黄牌警告
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v4
 
       - name: Extract Version
         id: get_version
         run: |
-          VERSION=$(grep -oP '^is_sh_ver="\K[^"]+' src/init.sh)
+          # 【修复项】：放宽正则容错率，并加入 || echo "" 防止 grep 找不到时直接崩溃
+          VERSION=$(grep -oP 'is_sh_ver="\K[^"]+' src/init.sh | head -n 1 || echo "")
+          
+          # 增加人工错误提示，方便以后定位问题
+          if [ -z "$VERSION" ]; then
+            echo "❌ 致命错误：无法在 src/init.sh 中找到 is_sh_ver 变量！请检查拼写。"
+            exit 1
+          fi
+          
+          echo "成功提取到版本号: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
@@ -40,7 +49,6 @@ jobs:
 
       - name: Package Code
         if: env.should_release == 'true'
-        # 【修复2】将 --exclude 放在最前面，彻底解决 Exit code 2 崩溃问题
         run: tar --exclude="./.git" --exclude="./.github" --exclude="./code.tar.gz" -zcvf code.tar.gz .
 
       - name: Create Release
