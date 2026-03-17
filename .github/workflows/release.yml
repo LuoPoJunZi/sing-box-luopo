@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      # 仅当 src/ 目录下的核心文件变动时才触发检查，节省 Actions 额度
       - 'src/**'
+  workflow_dispatch: # 手动触发按钮
 
 permissions:
   contents: write
@@ -16,13 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        # 【修复1】升级到 v4，消除黄牌警告
+        uses: actions/checkout@v4 
 
       - name: Extract Version
         id: get_version
-        # 精准提取 src/init.sh 中的版本号 (如 v1.0)
         run: |
           VERSION=$(grep -oP '^is_sh_ver="\K[^"]+' src/init.sh)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
@@ -42,8 +40,8 @@ jobs:
 
       - name: Package Code
         if: env.should_release == 'true'
-        # 排除掉不需要被用户下载的 GitHub Actions 隐藏文件夹
-        run: tar zcvf code.tar.gz ./* --exclude=code.tar.gz --exclude=.git --exclude=.github
+        # 【修复2】将 --exclude 放在最前面，彻底解决 Exit code 2 崩溃问题
+        run: tar --exclude="./.git" --exclude="./.github" --exclude="./code.tar.gz" -zcvf code.tar.gz .
 
       - name: Create Release
         if: env.should_release == 'true'
