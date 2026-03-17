@@ -1755,7 +1755,7 @@ main() {
         esac
         is_dont_auto_exit=
         manage restart &
-        if [[ $is_del_host ]]; then manage restart caddy &; fi
+        if [[ $is_del_host ]]; then manage restart caddy & fi
         ;;
     dns) dns_set ${@:2} ;;
     cron) cron_task ;;
