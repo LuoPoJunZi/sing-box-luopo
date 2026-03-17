@@ -7,6 +7,7 @@ on:
     paths:
       # 仅当 src/ 目录下的核心文件变动时才触发检查，节省 Actions 额度
       - 'src/**'
+  workflow_dispatch: # <--- 新增这行！这就是手动触发的魔法按钮
 
 permissions:
   contents: write
