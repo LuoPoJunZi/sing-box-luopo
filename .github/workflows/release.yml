@@ -22,7 +22,7 @@ jobs:
 
       - name: Extract Version
         id: get_version
-        # 精准提取 src/init.sh 中的版本号 (如 v1.2)
+        # 精准提取 src/init.sh 中的版本号 (如 v1.0)
         run: |
           VERSION=$(grep -oP '^is_sh_ver="\K[^"]+' src/init.sh)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
