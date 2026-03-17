@@ -27,7 +27,12 @@
 运行以下一键安装命令：
 
 ```bash
-bash <(curl -s -L [https://raw.githubusercontent.com/LuoPoJunZi/sing-box-luopo/main/install.sh](https://raw.githubusercontent.com/LuoPoJunZi/sing-box-luopo/main/install.sh))
+bash <(curl -s -L https://raw.githubusercontent.com/LuoPoJunZi/sing-box-luopo/main/install.sh)
+```
+
+备用链接安装命令：
+```bash
+bash <(curl -s -L https://github.com/LuoPoJunZi/sing-box-luopo/raw/main/install.sh)
 ```
 *(💡 提示：安装过程中会引导你自动创建一个默认的 VLESS-REALITY 节点，全程只需按回车即可完成。)*
 
