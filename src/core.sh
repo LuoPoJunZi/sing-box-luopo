@@ -1560,7 +1560,7 @@ update() {
 uninstall() {
     if [[ $is_caddy ]]; then
         is_tmp_list=("卸载 $is_core_name" "卸载 ${is_core_name} & Caddy")
-        ask list is_do_uninstall null "\n请选择卸载:"
+        ask list is_do_uninstall "" "\n请选择卸载:"
     else
         ask string y "是否卸载 ${is_core_name}? [y]: "
     fi
@@ -1619,7 +1619,7 @@ cron_task() {
     msg "1. 启用: 自动更新核心 + 自动清空日志 (推荐)"
     msg "2. 启用: 仅自动清空日志 (手动更新核心)"
     msg "3. 关闭: 停止所有自动维护任务"
-    ask list is_do_cron null
+    ask list is_do_cron ""
     case $REPLY in
     1)
         (crontab -l 2>/dev/null | grep -v -E "sing-box update core|/var/log/sing-box"; echo "0 3 * * 1 /usr/local/bin/sing-box update core >/dev/null 2>&1"; echo "0 4 * * * echo > /var/log/sing-box/access.log 2>/dev/null; echo > /var/log/sing-box/error.log 2>/dev/null") | crontab -
@@ -1680,7 +1680,7 @@ is_main_menu() {
     3) info ;;
     4) del ;;
     5)
-        ask list is_do_manage "启动 停止 重启" null "\n请选择系统服务状态:"
+        ask list is_do_manage "启动 停止 重启" "" "\n请选择系统服务状态:"
         manage $REPLY &
         msg "\n管理状态执行: $(_green $is_do_manage)\n"
         ;;
@@ -1692,7 +1692,7 @@ is_main_menu() {
         show_help
         ;;
     9)
-        ask list is_do_other "节点订阅(Sub) 一键查看所有节点信息 启用BBR 查看日志 测试运行 重装脚本 设置DNS 手动更新" null "\n请选择进阶工具:"
+        ask list is_do_other "节点订阅(Sub) 一键查看所有节点信息 启用BBR 查看日志 测试运行 重装脚本 设置DNS 手动更新" "" "\n请选择进阶工具:"
         case $REPLY in
         1) gen_sub ;;
         2) show_all_nodes ;;
@@ -1704,7 +1704,7 @@ is_main_menu() {
         8)
             is_tmp_list=("更新$is_core_name" "更新脚本")
             if [[ $is_caddy ]]; then is_tmp_list+=("更新Caddy"); fi
-            ask list is_do_update null "\n请选择手动更新:"
+            ask list is_do_update "" "\n请选择手动更新:"
             update $REPLY
             ;;
         esac
