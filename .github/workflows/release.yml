@@ -59,5 +59,5 @@ jobs:
         with:
           files: code.tar.gz
           tag_name: ${{ env.VERSION }}
-          name: Sing-box-LuoPo ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
           body: "🤖 自动化构建发布版本: ${{ env.VERSION }}"
