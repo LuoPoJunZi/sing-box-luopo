@@ -1,7 +1,10 @@
-name: Main
+# name: Main
+# on: push
+name: Auto Release
 
-on: push
-
+on:
+  workflow_dispatch: # <--- 现在它只有这一行了！代表仅限手动触发
+  
 permissions:
   contents: write
 
