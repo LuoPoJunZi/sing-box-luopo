@@ -1,6 +1,6 @@
 
 
-# 请移步到`sing-box-luopo`项目，谢谢各位大佬！
+# 请移步到`sing-box-luopo/main`主项目，谢谢各位大佬！
 
 # 快速安装脚本
 ## `LuoPoJunZi`魔改版
