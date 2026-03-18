@@ -45,7 +45,7 @@ bash <(curl -s -L https://github.com/LuoPoJunZi/sing-box-luopo/raw/main/install.
 ```bash
 sb
 ```
-*(输入 `sb` 并回车，即可随时唤出管理主面板。)*
+*(或者输入完整命令 `sing-box` 并回车，即可随时唤出管理主面板。)*
 
 ### 1. 如何添加一个新节点？
 1. 输入 `sb` 打开面板，输入 `1` 选择 **[添加配置]**。
