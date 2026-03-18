@@ -5,10 +5,10 @@
 # 快速安装脚本
 ## `LuoPoJunZi`魔改版
 ```bash
-bash <(curl -s -L https://raw.githubusercontent.com/LuoPoJunZi/Sing-box-LPMG/main/install.sh)
+bash <(curl -s -L https://raw.githubusercontent.com/LuoPoJunZi/sing-box-luopo/legacy-LPMG/install.sh)
 ```
 ```bash
-bash <(curl -s -L https://github.com/LuoPoJunZi/Sing-box-LPMG/raw/main/install.sh)
+bash <(curl -s -L https://github.com/LuoPoJunZi/sing-box-luopo//raw/legacy-LPMG/install.sh)
 ```
 ## `233boy`大佬的sing-box
 ```bash
